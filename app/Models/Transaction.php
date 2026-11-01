@@ -17,6 +17,9 @@ class Transaction extends Model
         'type',
         'category',
         'transaction_date',
+        'wallet',
+        'recurring_month',
+        'recurring_key',
         'status'
     ];
 }

@@ -38,10 +38,14 @@ class DashboardController extends Controller
                             ->get();
 
         // Data Grafik Line (Arus Kas 6 Bulan Terakhir)
+        $monthExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', transaction_date)"
+            : "DATE_FORMAT(transaction_date, '%Y-%m')";
+
         $monthlyStats = Transaction::select(
-                DB::raw('DATE_FORMAT(transaction_date, "%Y-%m") as month'),
-                DB::raw('SUM(CASE WHEN type = "income" THEN amount ELSE 0 END) as income'),
-                DB::raw('SUM(CASE WHEN type = "expense" THEN amount ELSE 0 END) as expense')
+                DB::raw("{$monthExpression} as month"),
+                DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
+                DB::raw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")
             )
             ->where('transaction_date', '>=', Carbon::now()->subMonths(6))
             ->groupBy('month')
