@@ -2,13 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TransactionApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
 
     public function test_transactions_can_be_created_listed_and_deleted_from_the_dashboard_api(): void
     {
@@ -82,7 +91,7 @@ class TransactionApiTest extends TestCase
 
     public function test_transactions_are_returned_newest_first(): void
     {
-        Transaction::create([
+        $this->user->transactions()->create([
             'description' => 'Transaksi lama',
             'amount' => 10000,
             'type' => 'income',
@@ -90,7 +99,7 @@ class TransactionApiTest extends TestCase
             'transaction_date' => '2026-10-01',
             'wallet' => 'bank',
         ]);
-        Transaction::create([
+        $this->user->transactions()->create([
             'description' => 'Transaksi baru',
             'amount' => 20000,
             'type' => 'income',

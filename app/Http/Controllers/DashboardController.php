@@ -11,28 +11,29 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $transactions = request()->user()->transactions();
         // Hitung Ringkasan Kartu Atas
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
-        $totalBalance = Transaction::where('type', 'income')->sum('amount') - 
-                        Transaction::where('type', 'expense')->sum('amount');
-        
-        $incomeThisMonth = Transaction::where('type', 'income')
+        $totalBalance = (clone $transactions)->where('type', 'income')->sum('amount') -
+                        (clone $transactions)->where('type', 'expense')->sum('amount');
+
+        $incomeThisMonth = (clone $transactions)->where('type', 'income')
                             ->whereMonth('transaction_date', $currentMonth)
                             ->whereYear('transaction_date', $currentYear)
                             ->sum('amount');
 
-        $expenseThisMonth = Transaction::where('type', 'expense')
+        $expenseThisMonth = (clone $transactions)->where('type', 'expense')
                             ->whereMonth('transaction_date', $currentMonth)
                             ->whereYear('transaction_date', $currentYear)
                             ->sum('amount');
 
         // Data Tabel Transaksi (5 Terakhir)
-        $recentTransactions = Transaction::latest('transaction_date')->take(5)->get();
+        $recentTransactions = (clone $transactions)->latest('transaction_date')->take(5)->get();
 
         // Data Grafik Doughnut (Pengeluaran per Kategori)
-        $expenseByCategory = Transaction::select('category', DB::raw('sum(amount) as total'))
+        $expenseByCategory = (clone $transactions)->select('category', DB::raw('sum(amount) as total'))
                             ->where('type', 'expense')
                             ->groupBy('category')
                             ->get();
@@ -42,7 +43,7 @@ class DashboardController extends Controller
             ? "strftime('%Y-%m', transaction_date)"
             : "DATE_FORMAT(transaction_date, '%Y-%m')";
 
-        $monthlyStats = Transaction::select(
+        $monthlyStats = (clone $transactions)->select(
                 DB::raw("{$monthExpression} as month"),
                 DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
                 DB::raw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense")

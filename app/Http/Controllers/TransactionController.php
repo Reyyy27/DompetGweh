@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
     public function index()
     {
-        return Transaction::query()
+        return request()->user()->transactions()
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->get();
@@ -33,13 +32,14 @@ class TransactionController extends Controller
             'recurring_key' => 'sometimes|required_with:recurring_month|string|max:80',
         ]);
 
-        if (!empty($validated['recurring_month']) && $validated['type'] !== 'income') {
+        if (! empty($validated['recurring_month']) && $validated['type'] !== 'income') {
             return response()->json(['message' => 'Transaksi berulang harus berupa pemasukan.'], 422);
         }
 
-        if (!empty($validated['recurring_month'])) {
+        if (! empty($validated['recurring_month'])) {
             $recurringKey = $validated['recurring_key'] ?? 'default';
-            $existing = Transaction::where('recurring_month', $validated['recurring_month'])
+            $existing = $request->user()->transactions()
+                ->where('recurring_month', $validated['recurring_month'])
                 ->where('recurring_key', $recurringKey)
                 ->first();
             if ($existing) {
@@ -49,7 +49,7 @@ class TransactionController extends Controller
         }
 
         $validated['wallet'] ??= 'bank';
-        $transaction = Transaction::create($validated + ['status' => 'success']);
+        $transaction = $request->user()->transactions()->create($validated + ['status' => 'success']);
 
         if ($request->expectsJson()) {
             return response()->json($transaction, 201);
@@ -58,10 +58,11 @@ class TransactionController extends Controller
         return redirect()->route('dashboard')->with('success', 'Transaksi berhasil ditambahkan!');
     }
 
-    // MENAMPILKAN FORM 
-    public function edit($id)
+    // MENAMPILKAN FORM
+    public function edit(Request $request, $id)
     {
-        $transaction = Transaction::findOrFail($id);
+        $transaction = $request->user()->transactions()->findOrFail($id);
+
         return view('transactions.edit', compact('transaction'));
     }
 
@@ -77,7 +78,7 @@ class TransactionController extends Controller
             'wallet' => 'sometimes|in:bank,cash',
         ]);
 
-        $transaction = Transaction::findOrFail($id);
+        $transaction = $request->user()->transactions()->findOrFail($id);
         $transaction->update($validated);
 
         if ($request->expectsJson()) {
@@ -90,7 +91,7 @@ class TransactionController extends Controller
     // MENGHAPUS DATA
     public function destroy(Request $request, $id)
     {
-        $transaction = Transaction::findOrFail($id);
+        $transaction = $request->user()->transactions()->findOrFail($id);
         $transaction->delete();
 
         if ($request->expectsJson()) {

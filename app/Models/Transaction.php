@@ -13,6 +13,7 @@ class Transaction extends Model
     // Kita mendaftarkan kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
         'description',
+        'user_id',
         'amount',
         'type',
         'category',

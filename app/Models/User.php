@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -21,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'palette',
+        'opening_balance_bank',
+        'opening_balance_cash',
     ];
 
     /**
@@ -43,6 +47,28 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'opening_balance_bank' => 'decimal:2',
+            'opening_balance_cash' => 'decimal:2',
         ];
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function recurringIncomeSchedules(): HasMany
+    {
+        return $this->hasMany(RecurringIncomeSchedule::class);
+    }
+
+    public function paylaterBills(): HasMany
+    {
+        return $this->hasMany(PaylaterBill::class);
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(UserInvitation::class, 'created_by');
     }
 }

@@ -13,6 +13,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app" data-user-id="{{ auth()->id() }}" data-user-name="{{ auth()->user()->name }}" data-user-email="{{ auth()->user()->email }}" data-user-palette="{{ auth()->user()->palette }}"></div>
 </body>
 </html>
