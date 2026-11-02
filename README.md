@@ -1,72 +1,107 @@
 # DompetGweh
 
-DompetGweh is a Laravel + React personal-finance app. Accounts have private transactions, recurring-income schedules, Paylater bills, opening balances, and a per-account color palette.
+DompetGweh adalah aplikasi pengelola keuangan pribadi untuk mencatat pemasukan dan pengeluaran, memantau saldo di berbagai rekening, mengatur anggaran, serta mengelola tagihan Paylater dalam satu dashboard.
 
-## Local development
+## Tujuan
 
-Requirements: PHP 8.2+, Composer, Node.js, and npm.
+Keuangan pribadi sering tersebar di rekening bank, uang tunai, dan e-wallet. Catatan transfer yang keliru dianggap pemasukan atau pengeluaran dapat membuat arus kas tampak lebih besar dari kondisi sebenarnya. Sementara itu, pengeluaran tanpa batas kategori dan tagihan yang luput dari perhatian menyulitkan pengguna merencanakan uang bulanan.
 
-```sh
+DompetGweh membantu pengguna mendapatkan gambaran saldo dan aktivitas keuangan yang lebih teratur tanpa mencampur data antar akun.
+
+## Masalah yang Diselesaikan
+
+| Masalah | Solusi di DompetGweh |
+| --- | --- |
+| Saldo tersebar di banyak rekening, tunai, dan e-wallet. | Buat dan kelola banyak dompet dengan nama, jenis, dan saldo awal masing-masing. |
+| Top-up atau tarik tunai tercatat sebagai pemasukan atau pengeluaran. | Catat sebagai transfer antar dompet; transfer mengurangi satu saldo dan menambah saldo lain tanpa mengubah total kekayaan atau arus kas transaksi. |
+| Pengeluaran kategori tertentu sulit dikendalikan. | Tetapkan budget bulanan per kategori dan pantau pemakaiannya melalui progress bar di dashboard. |
+| Transaksi lama sulit ditemukan dan dibandingkan. | Lihat transaksi terbaru di Ringkasan, cari dan filter riwayat, serta tinjau tren arus kas. |
+| Tagihan Paylater berisiko terlambat dibayar. | Catat nominal dan tanggal jatuh tempo, tandai tagihan yang lunas, serta lihat total dan jatuh tempo terdekat di Ringkasan. |
+| Pemasukan bulanan harus dicatat berulang kali. | Buat jadwal pemasukan rutin yang diproses otomatis oleh Laravel Scheduler. |
+
+## Fitur
+
+- **Dashboard Ringkasan:** total saldo lintas dompet, pemasukan dan pengeluaran bulan ini, transaksi terbaru, progres budget, serta ringkasan Paylater dan jatuh tempo terdekat.
+- **Dompet kustom:** buat rekening bank, uang tunai, e-wallet, atau jenis lain. Saldo mengikuti saldo awal, pemasukan, pengeluaran, dan transfer.
+- **Transfer antar dompet:** catat sumber, tujuan, nominal, tanggal, dan catatan transfer. Transfer tidak dimasukkan ke laporan pemasukan atau pengeluaran.
+- **Transaksi:** tambah, ubah, hapus, cari, dan filter pemasukan maupun pengeluaran berdasarkan kategori, tanggal, dan dompet.
+- **Budget bulanan:** atur batas per kategori untuk bulan tertentu dan lihat nominal terpakai, sisa, serta persentase pemakaian.
+- **Paylater:** kelola tagihan, tanggal jatuh tempo, status pembayaran, dan pengingat visual untuk tagihan yang terlambat.
+- **Pemasukan rutin:** jadwal dapat diaktifkan atau dinonaktifkan tanpa menghapus transaksi yang sudah dibuat.
+- **Kalender dan analisis:** lihat aktivitas berdasarkan tanggal serta tren arus kas enam bulan terakhir.
+- **Tema warna:** pilih Fintech Blue, Ocean Teal, Warm Amber, atau Soft Violet. Semua tema mempertahankan latar terang dan kontras yang nyaman.
+- **Akun privat:** transaksi, dompet, budget, undangan, dan data keuangan lainnya dibatasi per akun.
+
+## Teknologi
+
+- Laravel 12 dan PHP 8.2+
+- React 19, Vite 7, Tailwind CSS 4
+- Chart.js untuk visualisasi arus kas
+- SQLite sebagai database bawaan pengembangan; konfigurasi database Laravel lain dapat digunakan melalui `.env`
+
+## Menjalankan Secara Lokal
+
+Persyaratan: PHP 8.2 atau lebih baru, Composer, Node.js 20.19+ atau 22.12+, dan npm.
+
+Contoh berikut untuk PowerShell di Windows:
+
+```powershell
 composer install
-copy .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+if (!(Test-Path database/database.sqlite)) { New-Item -ItemType File database/database.sqlite | Out-Null }
 php artisan key:generate
-npm install
 php artisan migrate
+npm install
 npm run build
 php artisan serve
 ```
 
-For frontend development with Vite hot reload, run `npm run dev` in a second terminal.
+Buka alamat yang ditampilkan oleh `php artisan serve` (biasanya `http://127.0.0.1:8000`). Untuk hot reload saat mengembangkan frontend, jalankan `npm run dev` di terminal kedua.
 
-## Accounts and privacy
+Database bawaan memakai SQLite. Jika menggunakan database lain, sesuaikan pengaturan `DB_*` di `.env` sebelum menjalankan migrasi.
 
-- The first account can register without an invitation. After that, registration requires a single-use invitation link, which expires after seven days.
-- Create an invitation from **Pengaturan → Undang pengguna**. Each account sees and manages only its own financial data.
-- Passwords must be at least 12 characters.
-- The database seeder intentionally creates no demo account. An older installation may still contain the former `test@example.com` demo user; remove or secure that account before exposing the app publicly.
-- Existing transactions without an owner are claimed by the first account only when the database has no users. If a database already has accounts, back up the database and assign any legacy orphan transactions to the correct user before deployment; do not expose the app while they remain unassigned.
+## Akun dan Privasi
 
-## Deploying to a VPS
+- Akun pertama dapat mendaftar tanpa undangan. Pendaftaran berikutnya memerlukan tautan undangan sekali pakai yang berlaku selama tujuh hari.
+- Tautan undangan dibuat dari **Pengaturan → Undang pengguna**. Setiap akun hanya dapat melihat dan mengelola data keuangannya sendiri.
+- Kata sandi harus memiliki panjang minimal 12 karakter.
+- Seeder tidak membuat akun demo. Instalasi lama mungkin masih memiliki akun demo `test@example.com`; hapus atau amankan akun tersebut sebelum aplikasi dibuka untuk publik.
+- Transaksi lama yang belum memiliki pemilik hanya otomatis diklaim oleh akun pertama jika database belum memiliki pengguna. Jika database sudah berisi akun, cadangkan database lalu tetapkan transaksi yatim ke pemilik yang benar sebelum deployment. Jangan publikasikan aplikasi selama data tersebut belum dibereskan.
 
-1. Deploy the project and install production dependencies (`composer install --no-dev --optimize-autoloader` and `npm ci`).
-2. Configure `.env` for production:
+## Pemasukan Rutin dan Scheduler
 
-   ```dotenv
-   APP_ENV=production
-   APP_DEBUG=false
-   APP_URL=https://your-domain.example
-   APP_TIMEZONE=Asia/Jakarta
-   SESSION_SECURE_COOKIE=true
-   ```
+Setiap jadwal memproses pemasukan pada pukul 00.05 sesuai `APP_TIMEZONE` (bawaan proyek: `Asia/Jakarta`). Scheduler memastikan jadwal yang sama hanya dicatat satu kali per akun per bulan. Tanggal 29–31 disesuaikan ke hari terakhir pada bulan yang lebih pendek.
 
-   Generate a unique `APP_KEY`. Use a persistent database and session store; SQLite is suitable only when its file is on persistent storage and is included in backups. Set database credentials and `SESSION_DOMAIN` only when your deployment requires them.
+Untuk menjalankan scheduler di lingkungan lokal, gunakan terminal terpisah:
 
-3. Configure the web server document root to the project's `public` directory, enable HTTPS, and grant the web user write access to `storage` and `bootstrap/cache`.
-4. Run deployment commands:
+```sh
+php artisan schedule:work
+```
 
-   ```sh
-   php artisan migrate --force
-   npm run build
-   php artisan optimize
-   ```
+Di server produksi, jalankan Laravel Scheduler setiap menit melalui cron:
 
-5. Before making the site public, create the first account under restricted access and verify that no demo account or unassigned legacy records remain. Share invitations with the intended users only.
-6. Configure cron to invoke Laravel Scheduler every minute:
+```cron
+* * * * * cd /path/to/DompetGweh && php artisan schedule:run >> /dev/null 2>&1
+```
 
-   ```cron
-   * * * * * cd /path/to/DompetGweh && php artisan schedule:run >> /dev/null 2>&1
-   ```
+Menonaktifkan jadwal mencegah transaksi berikutnya dibuat, tetapi tidak menghapus transaksi yang sudah tercatat.
 
-   The scheduler creates due recurring-income transactions at 00:05 in the configured application timezone, including while nobody is signed in. Dates from the 29th to 31st are clamped to the last day of shorter months.
-7. Back up the database and application key securely and test restoring backups. Use a persistent disk/database rather than an ephemeral VPS filesystem.
-
-## Recurring income
-
-Add separate schedules for each monthly payment, such as day 1 and day 25. The server-side scheduler records each due schedule once per account and month. Turning a schedule off prevents future records but does not delete transactions already created.
-
-## Tests
+## Pengujian
 
 ```sh
 php artisan test
 npm run build
 ```
+
+## Deployment
+
+Repository ini menyertakan `Dockerfile`, `fly.toml`, dan workflow GitHub Actions untuk Fly.io. Deployment otomatis melalui GitHub Actions memerlukan secret repository bernama `FLY_API_TOKEN`.
+
+Untuk deployment di VPS:
+
+1. Atur `.env` produksi dengan `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` HTTPS, `APP_TIMEZONE=Asia/Jakarta`, dan `SESSION_SECURE_COOKIE=true`. Gunakan `APP_KEY` unik.
+2. Gunakan database dan penyimpanan sesi yang persisten. SQLite hanya sesuai jika file database berada di disk persisten dan masuk dalam backup.
+3. Arahkan document root web server ke folder `public`, aktifkan HTTPS, dan izinkan web server menulis ke `storage` serta `bootstrap/cache`.
+4. Jalankan `composer install --no-dev --optimize-autoloader`, `npm ci`, `php artisan migrate --force`, `npm run build`, dan `php artisan optimize`.
+5. Siapkan scheduler sesuai bagian di atas. Buat akun pertama saat akses masih dibatasi, periksa data lama, dan bagikan undangan hanya kepada pengguna yang dituju.
+6. Cadangkan database dan `APP_KEY` dengan aman, serta uji proses pemulihan backup.
