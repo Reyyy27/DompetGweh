@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PaylaterController;
 use App\Http\Controllers\RecurringIncomeController;
 use App\Http\Controllers\TransactionController;
@@ -26,7 +27,11 @@ Route::middleware('auth')->group(function () {
     Route::prefix('api')->group(function () {
         Route::get('/account', [AccountController::class, 'show'])->name('api.account.show');
         Route::put('/account', [AccountController::class, 'update'])->name('api.account.update');
-        Route::post('/invitations', [AuthController::class, 'createInvitation'])->middleware('throttle:5,1')->name('api.invitations.store');
+        Route::middleware('admin')->group(function () {
+            Route::post('/invitations', [AuthController::class, 'createInvitation'])->middleware('throttle:5,1')->name('api.invitations.store');
+            Route::get('/admin/members', [MemberController::class, 'index'])->name('api.admin.members.index');
+            Route::put('/admin/members/{member}', [MemberController::class, 'update'])->middleware('throttle:10,1')->name('api.admin.members.update');
+        });
 
         Route::get('/transactions', [TransactionController::class, 'index'])->name('api.transactions.index');
         Route::post('/transactions', [TransactionController::class, 'store'])->name('api.transactions.store');

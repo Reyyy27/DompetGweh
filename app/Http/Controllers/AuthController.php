@@ -89,6 +89,7 @@ class AuthController extends Controller
                     ->where('id', $invitation->id)
                     ->update(['accepted_at' => now(), 'updated_at' => now()]);
             } else {
+                $user->forceFill(['role' => 'admin'])->save();
                 Transaction::query()->whereNull('user_id')->update(['user_id' => $user->id]);
             }
 

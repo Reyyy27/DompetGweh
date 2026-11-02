@@ -14,6 +14,7 @@ class AccountController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'is_admin' => $user->isAdmin(),
             'palette' => $user->palette,
             'opening_balances' => [
                 'bank' => (float) $user->opening_balance_bank,

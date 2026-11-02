@@ -17,11 +17,17 @@
             <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" required class="mt-2 w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10">
         </label>
         <label class="block text-xs font-bold text-slate-600">KATA SANDI
-            <input type="password" name="password" autocomplete="new-password" minlength="12" required class="mt-2 w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10">
+            <span class="relative mt-2 block">
+                <input id="register-password" type="password" name="password" autocomplete="new-password" minlength="12" required class="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 pr-24 text-sm text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10">
+                <button type="button" data-password-toggle aria-controls="register-password" aria-pressed="false" aria-label="Tampilkan kata sandi" class="absolute inset-y-0 right-3 text-xs font-bold text-[#2563EB]">Tampilkan</button>
+            </span>
             <span class="mt-1 block font-normal text-slate-400">Minimal 12 karakter.</span>
         </label>
         <label class="block text-xs font-bold text-slate-600">ULANGI KATA SANDI
-            <input type="password" name="password_confirmation" autocomplete="new-password" minlength="12" required class="mt-2 w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10">
+            <span class="relative mt-2 block">
+                <input id="register-password-confirmation" type="password" name="password_confirmation" autocomplete="new-password" minlength="12" required class="w-full rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 pr-24 text-sm text-[#0F172A] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10">
+                <button type="button" data-password-toggle aria-controls="register-password-confirmation" aria-pressed="false" aria-label="Tampilkan kata sandi" class="absolute inset-y-0 right-3 text-xs font-bold text-[#2563EB]">Tampilkan</button>
+            </span>
         </label>
         @if ($errors->any())
             <div role="alert" class="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">

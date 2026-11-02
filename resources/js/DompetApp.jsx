@@ -441,7 +441,33 @@ function Analysis({ wallets, records, bills }) {
     return <><PageTitle title="Analisis" subtitle="Ringkasan keputusan berdasarkan catatan keuanganmu." /><div className="grid gap-4 md:grid-cols-3"><Stat title="Pemasukan tercatat" value={rupiah(income)} tone="text-[var(--accent)]" /><Stat title="Pengeluaran tercatat" value={rupiah(expense)} tone="text-red-500" /><Stat title="Sisa paylater" value={rupiah(billsTotal)} tone="text-slate-800" /></div><div className="panel mt-4 rounded-[20px] p-6"><p className="text-sm font-extrabold">Arus kas enam bulan terakhir</p><LineChart records={records} /></div></>;
 }
 
-function Settings({ profile, palette, recurringIncomes, save, changePalette, createInvitation, invitationUrl, addRecurringIncome, toggleRecurringIncome, deleteRecurringIncome, reset }) {
+function MemberEditor({ member, save }) {
+    const [form, setForm] = useState({ name: member.name, email: member.email, password: '', password_confirmation: '' });
+    useEffect(() => {
+        setForm({ name: member.name, email: member.email, password: '', password_confirmation: '' });
+    }, [member]);
+    const inputClass = 'mt-2 w-full rounded-xl border border-[var(--panel-border)] bg-[var(--app-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--accent)]';
+    const submit = async (event) => {
+        event.preventDefault();
+        const changes = { name: form.name.trim(), email: form.email.trim() };
+        if (form.password) {
+            changes.password = form.password;
+            changes.password_confirmation = form.password_confirmation;
+        }
+        if (await save(member.id, changes)) {
+            setForm((current) => ({ ...current, password: '', password_confirmation: '' }));
+        }
+    };
+    return <form onSubmit={submit} className="grid gap-3 border-b border-[var(--panel-border)] py-4 last:border-0 sm:grid-cols-2 xl:grid-cols-5">
+        <label className="block text-xs font-bold text-slate-500">NAMA<input required maxLength="80" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className={inputClass} /></label>
+        <label className="block text-xs font-bold text-slate-500">EMAIL<input required type="email" maxLength="255" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className={inputClass} /></label>
+        <label className="block text-xs font-bold text-slate-500">PASSWORD BARU<input type="password" minLength="12" autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="Kosongkan jika tetap" className={inputClass} /></label>
+        <label className="block text-xs font-bold text-slate-500">ULANGI PASSWORD<input type="password" minLength="12" autoComplete="new-password" value={form.password_confirmation} onChange={(event) => setForm({ ...form, password_confirmation: event.target.value })} className={inputClass} /></label>
+        <button className="self-end rounded-xl bg-[var(--accent)] px-4 py-3 text-xs font-extrabold text-[var(--accent-contrast)]">Simpan perubahan</button>
+    </form>;
+}
+
+function Settings({ profile, palette, recurringIncomes, save, changePalette, createInvitation, invitationUrl, addRecurringIncome, toggleRecurringIncome, deleteRecurringIncome, reset, isAdmin, members, updateMember }) {
     const [name, setName] = useState(profile.name);
     const [wallets, setWallets] = useState([]);
     const [income, setIncome] = useState({ description: '', amount: '', day: '1', category: 'Gaji', wallet: '' });
@@ -496,7 +522,7 @@ function Settings({ profile, palette, recurringIncomes, save, changePalette, cre
                     {recurringIncomes.length ? <div className="mt-3 divide-y divide-[var(--panel-border)]">{recurringIncomes.map((schedule) => <div key={schedule.id} className="flex items-center gap-3 py-3"><input aria-label={`Aktifkan ${schedule.description}`} type="checkbox" checked={schedule.enabled} onChange={() => toggleRecurringIncome(schedule.id)} className="h-4 w-4 accent-[var(--accent)]" /><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{schedule.description}</p><p className="mt-1 text-[10px] text-slate-500">{rupiah(schedule.amount)} · tanggal {schedule.day} · {walletNames[schedule.wallet] || schedule.wallet}</p></div><button type="button" onClick={() => deleteRecurringIncome(schedule.id)} aria-label={`Hapus ${schedule.description}`} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-500"><Trash2 size={15} /></button></div>)}</div> : <p className="mt-3 text-xs text-slate-500">Belum ada jadwal pemasukan. Tambahkan jadwal untuk tanggal 1, 25, atau tanggal lainnya.</p>}
                 </div>
             </form>
-            <div className="panel rounded-[20px] p-6 lg:col-span-2">
+            {isAdmin && <div className="panel rounded-[20px] p-6 lg:col-span-2">
                 <p className="text-sm font-extrabold">Undang pengguna</p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">Buat tautan undangan sekali pakai yang berlaku selama 7 hari. Pengguna yang diundang memiliki data keuangan terpisah dari akunmu.</p>
                 <button type="button" onClick={createInvitation} className="mt-4 rounded-xl border border-[var(--panel-border)] px-4 py-3 text-xs font-extrabold hover:bg-slate-100">Buat tautan undangan</button>
@@ -506,7 +532,12 @@ function Settings({ profile, palette, recurringIncomes, save, changePalette, cre
                     <p className="mt-2 text-sm leading-6 text-slate-500">Hapus tagihan, saldo awal, jadwal pemasukan otomatis, dan profil akun ini. Riwayat transaksi tidak akan dihapus.</p>
                     <button onClick={reset} className="mt-4 rounded-xl border border-red-300 px-4 py-3 text-xs font-extrabold text-red-500 hover:bg-red-50">Reset data akun</button>
                 </div>
-            </div>
+                <div className="mt-6 border-t border-[var(--panel-border)] pt-5">
+                    <p className="text-sm font-extrabold">Akun dan password member</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">Perbarui nama, email, atau atur password baru. Password dikosongkan secara default dan tidak pernah ditampilkan.</p>
+                    {members.length ? <div className="mt-2 divide-y divide-[var(--panel-border)]">{members.map((member) => <MemberEditor key={member.id} member={member} save={updateMember} />)}</div> : <p className="mt-4 text-xs text-slate-500">Belum ada akun member.</p>}
+                </div>
+            </div>}
         </div>
     </>;
 }
@@ -527,6 +558,8 @@ export default function DompetApp() {
     const [bills, setBills] = useState([]);
     const [profile, setProfile] = useState({ name: initialAccount.name, email: initialAccount.email });
     const [palette, setPalette] = useState(initialAccount.palette);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [members, setMembers] = useState([]);
     const [invitationUrl, setInvitationUrl] = useState('');
     const loadAccountData = async () => {
         setLoading(true);
@@ -541,6 +574,13 @@ export default function DompetApp() {
             ]);
             setProfile({ name: account.name, email: account.email });
             setPalette(account.palette);
+            setIsAdmin(account.is_admin);
+            setMembers([]);
+            if (account.is_admin) {
+                apiRequest('/api/admin/members')
+                    .then(setMembers)
+                    .catch((error) => toast(`Daftar member gagal dimuat: ${error.message}`));
+            }
             setOpeningBalances(account.opening_balances);
             setWalletList(accountWallets);
             setRecords(transactions.map(normalizeTransaction));
@@ -680,6 +720,20 @@ export default function DompetApp() {
             toast(`Undangan gagal dibuat: ${error.message}`);
         }
     };
+    const updateMember = async (id, changes) => {
+        try {
+            const updated = await apiRequest(`/api/admin/members/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(changes),
+            });
+            setMembers((current) => current.map((member) => member.id === id ? updated : member));
+            toast('Akun member diperbarui');
+            return true;
+        } catch (error) {
+            toast(`Akun member gagal diperbarui: ${error.message}`);
+            return false;
+        }
+    };
     const reset = async () => {
         if (!window.confirm('Hapus tagihan, saldo awal, dan jadwal pemasukan akun ini? Riwayat transaksi dan profil tidak akan dihapus.')) return;
         try {
@@ -726,7 +780,7 @@ export default function DompetApp() {
         } catch (error) {
             toast(`Status tagihan gagal diperbarui: ${error.message}`);
         }
-    }} remove={deleteBill} add={() => setBillOpen(true)} /> : active === 'analysis' ? <Analysis wallets={walletTotals} records={records} bills={bills} /> : <Settings profile={profile} palette={palette} recurringIncomes={recurringIncomes} save={saveProfile} changePalette={changePalette} createInvitation={createInvitation} invitationUrl={invitationUrl} addRecurringIncome={addRecurringIncome} toggleRecurringIncome={toggleRecurringIncome} deleteRecurringIncome={deleteRecurringIncome} reset={reset} />;
+    }} remove={deleteBill} add={() => setBillOpen(true)} /> : active === 'analysis' ? <Analysis wallets={walletTotals} records={records} bills={bills} /> : <Settings profile={profile} palette={palette} recurringIncomes={recurringIncomes} save={saveProfile} changePalette={changePalette} createInvitation={createInvitation} invitationUrl={invitationUrl} addRecurringIncome={addRecurringIncome} toggleRecurringIncome={toggleRecurringIncome} deleteRecurringIncome={deleteRecurringIncome} reset={reset} isAdmin={isAdmin} members={members} updateMember={updateMember} />;
     const totalIncome = records.filter((record) => record.amount > 0).reduce((sum, record) => sum + record.amount, 0);
     const totalExpense = records.filter((record) => record.amount < 0).reduce((sum, record) => sum + Math.abs(record.amount), 0);
     const savingsRate = totalIncome ? Math.max(0, Math.min(100, Math.round(((totalIncome - totalExpense) / totalIncome) * 100))) : 0;

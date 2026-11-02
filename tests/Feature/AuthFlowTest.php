@@ -11,6 +11,30 @@ class AuthFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_authenticated_users_are_redirected_from_login_and_registration_forms(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/login')
+            ->assertRedirect(route('dashboard'));
+
+        $this->get('/register')->assertRedirect(route('dashboard'));
+    }
+
+    public function test_auth_forms_include_password_visibility_controls(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('data-password-toggle', false)
+            ->assertSee('id="login-password"', false);
+
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('id="register-password"', false)
+            ->assertSee('id="register-password-confirmation"', false);
+    }
+
     public function test_first_account_can_register_and_subsequent_accounts_require_a_one_time_invitation(): void
     {
         $legacyTransaction = Transaction::create([
@@ -32,6 +56,7 @@ class AuthFlowTest extends TestCase
 
         $owner = User::where('email', 'owner@example.test')->firstOrFail();
         $this->assertAuthenticatedAs($owner);
+        $this->assertTrue($owner->isAdmin());
         $this->assertDatabaseHas('transactions', [
             'id' => $legacyTransaction->id,
             'user_id' => $owner->id,
