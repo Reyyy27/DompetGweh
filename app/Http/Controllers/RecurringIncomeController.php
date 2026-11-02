@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class RecurringIncomeController extends Controller
 {
@@ -17,12 +18,17 @@ class RecurringIncomeController extends Controller
 
     public function store(Request $request)
     {
+        $validWallets = array_unique(array_merge(
+            ['bank', 'cash'],
+            $request->user()->wallets()->pluck('slug')->all()
+        ));
+
         $validated = $request->validate([
             'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999999.99'],
             'day' => ['required', 'integer', 'between:1,31'],
             'category' => ['required', 'string', 'max:255'],
-            'wallet' => ['required', 'in:bank,cash'],
+            'wallet' => ['required', 'string', Rule::in($validWallets)],
         ]);
 
         $schedule = $request->user()->recurringIncomeSchedules()->create([

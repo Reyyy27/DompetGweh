@@ -3,9 +3,12 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\PaylaterController;
 use App\Http\Controllers\RecurringIncomeController;
-use App\Http\Controllers\TransactionController; 
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TransferController;
+use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -39,5 +42,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/paylater', [PaylaterController::class, 'store'])->name('api.paylater.store');
         Route::patch('/paylater/{bill}', [PaylaterController::class, 'update'])->name('api.paylater.update');
         Route::delete('/paylater/{bill}', [PaylaterController::class, 'destroy'])->name('api.paylater.destroy');
+
+        Route::get('/wallets', [WalletController::class, 'index'])->name('api.wallets.index');
+        Route::post('/wallets', [WalletController::class, 'store'])->name('api.wallets.store');
+        Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->name('api.wallets.update');
+        Route::delete('/wallets/{wallet}', [WalletController::class, 'destroy'])->name('api.wallets.destroy');
+
+        Route::get('/transfers', [TransferController::class, 'index'])->name('api.transfers.index');
+        Route::post('/transfers', [TransferController::class, 'store'])->name('api.transfers.store');
+        Route::delete('/transfers/{transfer}', [TransferController::class, 'destroy'])->name('api.transfers.destroy');
+
+        Route::get('/budgets', [BudgetController::class, 'index'])->name('api.budgets.index');
+        Route::post('/budgets', [BudgetController::class, 'store'])->name('api.budgets.store');
+        Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy'])->name('api.budgets.destroy');
     });
 });

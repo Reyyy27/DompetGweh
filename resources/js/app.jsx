@@ -20,10 +20,10 @@ class AppErrorBoundary extends React.Component {
     render() {
         if (this.state.error) {
             return (
-                <main className="grid min-h-screen place-items-center bg-[#09090B] p-6 text-[#F4F4F5]">
-                    <div className="max-w-md rounded-2xl border border-[#F43F5E]/20 bg-[#18181B] p-6">
-                        <p className="text-sm font-bold text-[#FDA4AF]">Aplikasi gagal dimuat</p>
-                        <p className="mt-2 text-sm text-slate-400">Muat ulang halaman. Jika masalah berlanjut, periksa koneksi server dan log aplikasi.</p>
+                <main className="grid min-h-screen place-items-center bg-[#F8FAFC] p-6 text-[#0F172A]">
+                    <div className="max-w-md rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-sm">
+                        <p className="text-sm font-bold text-[#2563EB]">Aplikasi gagal dimuat</p>
+                        <p className="mt-2 text-sm text-slate-600">Muat ulang halaman. Jika masalah berlanjut, periksa koneksi server dan log aplikasi.</p>
                     </div>
                 </main>
             );

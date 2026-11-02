@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
@@ -21,13 +22,18 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
+        $validWallets = array_unique(array_merge(
+            ['bank', 'cash'],
+            $request->user()?->wallets()->pluck('slug')->all() ?? []
+        ));
+
         $validated = $request->validate([
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:1',
             'type' => 'required|in:income,expense',
             'category' => 'required|string|max:255',
             'transaction_date' => 'required|date',
-            'wallet' => 'sometimes|in:bank,cash',
+            'wallet' => ['sometimes', 'string', Rule::in($validWallets)],
             'recurring_month' => 'sometimes|nullable|date_format:Y-m',
             'recurring_key' => 'sometimes|required_with:recurring_month|string|max:80',
         ]);
@@ -69,13 +75,18 @@ class TransactionController extends Controller
     // UPDATE
     public function update(Request $request, $id)
     {
+        $validWallets = array_unique(array_merge(
+            ['bank', 'cash'],
+            $request->user()?->wallets()->pluck('slug')->all() ?? []
+        ));
+
         $validated = $request->validate([
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:1',
             'type' => 'required|in:income,expense',
             'category' => 'required|string|max:255',
             'transaction_date' => 'required|date',
-            'wallet' => 'sometimes|in:bank,cash',
+            'wallet' => ['sometimes', 'string', Rule::in($validWallets)],
         ]);
 
         $transaction = $request->user()->transactions()->findOrFail($id);
