@@ -97,6 +97,10 @@ npm run build
 
 Repository ini menyertakan `Dockerfile`, `fly.toml`, dan workflow GitHub Actions untuk Fly.io. Deployment otomatis melalui GitHub Actions memerlukan secret repository bernama `FLY_API_TOKEN`.
 
+Pada Fly.io, aplikasi memakai SQLite di Fly Volume terenkripsi yang dipasang pada `/data` dan satu Machine saja. Volume memiliki scheduled snapshot dengan retensi 5 hari; snapshot volume bukan pengganti backup yang disimpan di tempat lain. Deploy otomatis menggunakan strategi `immediate` tanpa Machine cadangan agar volume tidak dipakai dua Machine sekaligus. Saat tidak ada trafik, Machine dapat berhenti dan otomatis menyala kembali tanpa menghapus isi volume.
+
+Admin dapat membuka **Pengaturan → Backup database** untuk membuat dan mengunduh file SQLite, mengunduh backup tersimpan, atau memulihkan dari file `.sqlite`/`.db`. Pemulihan memvalidasi integritas file dan membuat backup keamanan database aktif terlebih dahulu. Maksimal 10 file backup terakhir disimpan pada volume.
+
 Untuk deployment di VPS:
 
 1. Atur `.env` produksi dengan `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` HTTPS, `APP_TIMEZONE=Asia/Jakarta`, dan `SESSION_SECURE_COOKIE=true`. Gunakan `APP_KEY` unik.

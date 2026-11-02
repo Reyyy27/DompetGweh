@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\PaylaterController;
 use App\Http\Controllers\RecurringIncomeController;
@@ -31,6 +32,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/invitations', [AuthController::class, 'createInvitation'])->middleware('throttle:5,1')->name('api.invitations.store');
             Route::get('/admin/members', [MemberController::class, 'index'])->name('api.admin.members.index');
             Route::put('/admin/members/{member}', [MemberController::class, 'update'])->middleware('throttle:10,1')->name('api.admin.members.update');
+            Route::get('/admin/database/backups', [DatabaseBackupController::class, 'index'])->name('api.admin.database.backups.index');
+            Route::post('/admin/database/backups', [DatabaseBackupController::class, 'create'])->middleware('throttle:5,1')->name('api.admin.database.backups.create');
+            Route::get('/admin/database/backups/{filename}', [DatabaseBackupController::class, 'download'])->where('filename', '[a-zA-Z0-9._-]+')->name('api.admin.database.backups.download');
+            Route::post('/admin/database/restore', [DatabaseBackupController::class, 'restore'])->middleware('throttle:2,1')->name('api.admin.database.restore');
         });
 
         Route::get('/transactions', [TransactionController::class, 'index'])->name('api.transactions.index');

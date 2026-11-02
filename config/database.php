@@ -18,6 +18,8 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
+    'backup_path' => env('DB_BACKUP_PATH', storage_path('app/private/backups')),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
     ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Bell, CalendarDays, Check, ChevronLeft, ChevronRight, CircleDollarSign,
-    CreditCard, Landmark, LayoutGrid, Menu, MoreHorizontal, Pencil, PiggyBank, Plus, ReceiptText,
+    CreditCard, Database, Download, FileUp, Landmark, LayoutGrid, Menu, MoreHorizontal, Pencil, PiggyBank, Plus, ReceiptText,
     Search, Settings2, Smartphone, Sparkles, Target, Trash2, TrendingUp, WalletCards, X,
 } from 'lucide-react';
 import { Chart, Filler, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip } from 'chart.js';
@@ -30,11 +30,12 @@ const pages = [
 
 function apiRequest(url, options = {}) {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     return fetch(url, {
         ...options,
         headers: {
             Accept: 'application/json',
-            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
             ...(token ? { 'X-CSRF-TOKEN': token } : {}),
             ...options.headers,
         },
@@ -467,11 +468,13 @@ function MemberEditor({ member, save }) {
     </form>;
 }
 
-function Settings({ profile, palette, recurringIncomes, save, changePalette, createInvitation, invitationUrl, addRecurringIncome, toggleRecurringIncome, deleteRecurringIncome, reset, isAdmin, members, updateMember }) {
+function Settings({ profile, palette, recurringIncomes, save, changePalette, createInvitation, invitationUrl, addRecurringIncome, toggleRecurringIncome, deleteRecurringIncome, reset, isAdmin, members, updateMember, databaseBackups, createDatabaseBackup, restoreDatabaseBackup }) {
     const [name, setName] = useState(profile.name);
     const [wallets, setWallets] = useState([]);
     const [income, setIncome] = useState({ description: '', amount: '', day: '1', category: 'Gaji', wallet: '' });
     const [copyStatus, setCopyStatus] = useState('');
+    const [backupFile, setBackupFile] = useState(null);
+    const [restoringBackup, setRestoringBackup] = useState(false);
     useEffect(() => {
         setName(profile.name);
         apiRequest('/api/wallets').then((items) => {
@@ -537,6 +540,26 @@ function Settings({ profile, palette, recurringIncomes, save, changePalette, cre
                     <p className="mt-2 text-sm leading-6 text-slate-500">Perbarui nama, email, atau atur password baru. Password dikosongkan secara default dan tidak pernah ditampilkan.</p>
                     {members.length ? <div className="mt-2 divide-y divide-[var(--panel-border)]">{members.map((member) => <MemberEditor key={member.id} member={member} save={updateMember} />)}</div> : <p className="mt-4 text-xs text-slate-500">Belum ada akun member.</p>}
                 </div>
+                <div className="mt-6 border-t border-[var(--panel-border)] pt-5">
+                    <p className="flex items-center gap-2 text-sm font-extrabold"><Database size={16} />Backup database</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">Unduh salinan SQLite atau pulihkan dari file backup. Sebelum pemulihan, salinan database saat ini akan dibuat otomatis.</p>
+                    <button type="button" onClick={createDatabaseBackup} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[var(--panel-border)] px-4 py-3 text-xs font-extrabold hover:bg-slate-100"><Download size={15} />Buat dan unduh backup</button>
+                    <form onSubmit={async (event) => {
+                        event.preventDefault();
+                        if (!backupFile || !window.confirm('Pulihkan database dari file ini? Data saat ini tetap disimpan sebagai backup sebelum pemulihan.')) return;
+                        setRestoringBackup(true);
+                        if (await restoreDatabaseBackup(backupFile)) setBackupFile(null);
+                        setRestoringBackup(false);
+                    }} className="mt-4 flex flex-wrap items-end gap-3">
+                        <label className="min-w-0 flex-1 text-xs font-bold text-slate-500">FILE BACKUP SQLITE<input required type="file" accept=".sqlite,.db,application/vnd.sqlite3" onChange={(event) => setBackupFile(event.target.files?.[0] || null)} className="mt-2 block w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-bold" /></label>
+                        <button disabled={!backupFile || restoringBackup} className="inline-flex items-center gap-2 rounded-xl border border-red-300 px-4 py-3 text-xs font-extrabold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"><FileUp size={15} />{restoringBackup ? 'Memulihkan...' : 'Pulihkan backup'}</button>
+                    </form>
+                    <p className="mt-3 text-xs text-amber-700">Pemulihan mengganti seluruh data aktif. Pastikan file backup benar sebelum melanjutkan.</p>
+                    <div className="mt-5 border-t border-[var(--panel-border)] pt-4">
+                        <p className="text-xs font-bold">Backup tersimpan ({databaseBackups.length})</p>
+                        {databaseBackups.length ? <div className="mt-2 divide-y divide-[var(--panel-border)]">{databaseBackups.map((backup) => <div key={backup.filename} className="flex items-center gap-3 py-3"><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{backup.filename}</p><p className="mt-1 text-[10px] text-slate-500">{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(backup.created_at))} · {Math.max(1, Math.ceil(backup.size / 1024))} KB</p></div><a href={`/api/admin/database/backups/${encodeURIComponent(backup.filename)}`} aria-label={`Unduh ${backup.filename}`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><Download size={16} /></a></div>)}</div> : <p className="mt-3 text-xs text-slate-500">Belum ada backup tersimpan.</p>}
+                    </div>
+                </div>
             </div>}
         </div>
     </>;
@@ -560,6 +583,7 @@ export default function DompetApp() {
     const [palette, setPalette] = useState(initialAccount.palette);
     const [isAdmin, setIsAdmin] = useState(false);
     const [members, setMembers] = useState([]);
+    const [databaseBackups, setDatabaseBackups] = useState([]);
     const [invitationUrl, setInvitationUrl] = useState('');
     const loadAccountData = async () => {
         setLoading(true);
@@ -576,10 +600,14 @@ export default function DompetApp() {
             setPalette(account.palette);
             setIsAdmin(account.is_admin);
             setMembers([]);
+            setDatabaseBackups([]);
             if (account.is_admin) {
                 apiRequest('/api/admin/members')
                     .then(setMembers)
                     .catch((error) => toast(`Daftar member gagal dimuat: ${error.message}`));
+                apiRequest('/api/admin/database/backups')
+                    .then(setDatabaseBackups)
+                    .catch((error) => toast(`Daftar backup gagal dimuat: ${error.message}`));
             }
             setOpeningBalances(account.opening_balances);
             setWalletList(accountWallets);
@@ -720,6 +748,29 @@ export default function DompetApp() {
             toast(`Undangan gagal dibuat: ${error.message}`);
         }
     };
+    const createDatabaseBackup = async () => {
+        try {
+            const backup = await apiRequest('/api/admin/database/backups', { method: 'POST' });
+            setDatabaseBackups(await apiRequest('/api/admin/database/backups'));
+            window.location.assign(backup.download_url);
+        } catch (error) {
+            toast(`Backup database gagal dibuat: ${error.message}`);
+        }
+    };
+    const restoreDatabaseBackup = async (file) => {
+        const formData = new FormData();
+        formData.append('backup', file);
+        try {
+            const result = await apiRequest('/api/admin/database/restore', { method: 'POST', body: formData });
+            setDatabaseBackups(await apiRequest('/api/admin/database/backups'));
+            toast(result.message);
+            loadAccountData();
+            return true;
+        } catch (error) {
+            toast(`Pemulihan database gagal: ${error.message}`);
+            return false;
+        }
+    };
     const updateMember = async (id, changes) => {
         try {
             const updated = await apiRequest(`/api/admin/members/${id}`, {
@@ -780,7 +831,7 @@ export default function DompetApp() {
         } catch (error) {
             toast(`Status tagihan gagal diperbarui: ${error.message}`);
         }
-    }} remove={deleteBill} add={() => setBillOpen(true)} /> : active === 'analysis' ? <Analysis wallets={walletTotals} records={records} bills={bills} /> : <Settings profile={profile} palette={palette} recurringIncomes={recurringIncomes} save={saveProfile} changePalette={changePalette} createInvitation={createInvitation} invitationUrl={invitationUrl} addRecurringIncome={addRecurringIncome} toggleRecurringIncome={toggleRecurringIncome} deleteRecurringIncome={deleteRecurringIncome} reset={reset} isAdmin={isAdmin} members={members} updateMember={updateMember} />;
+    }} remove={deleteBill} add={() => setBillOpen(true)} /> : active === 'analysis' ? <Analysis wallets={walletTotals} records={records} bills={bills} /> : <Settings profile={profile} palette={palette} recurringIncomes={recurringIncomes} save={saveProfile} changePalette={changePalette} createInvitation={createInvitation} invitationUrl={invitationUrl} addRecurringIncome={addRecurringIncome} toggleRecurringIncome={toggleRecurringIncome} deleteRecurringIncome={deleteRecurringIncome} reset={reset} isAdmin={isAdmin} members={members} updateMember={updateMember} databaseBackups={databaseBackups} createDatabaseBackup={createDatabaseBackup} restoreDatabaseBackup={restoreDatabaseBackup} />;
     const totalIncome = records.filter((record) => record.amount > 0).reduce((sum, record) => sum + record.amount, 0);
     const totalExpense = records.filter((record) => record.amount < 0).reduce((sum, record) => sum + Math.abs(record.amount), 0);
     const savingsRate = totalIncome ? Math.max(0, Math.min(100, Math.round(((totalIncome - totalExpense) / totalIncome) * 100))) : 0;
